@@ -1,0 +1,61 @@
+name: "VibeShield Security Gate"
+description: "Pre-launch security gate for AI-built apps (Cursor, Lovable, Vercel, Supabase). Scans live preview URLs on every PR & posts a clean security score table."
+author: "ShipBastion (zColdWater)"
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  url:
+    description: "Public production or preview URL to audit (e.g. https://yourapp.vercel.app)"
+    required: true
+  fail-below:
+    description: "Fail the workflow if security score (0-100) is below this threshold (0 = report only)"
+    required: false
+    default: "0"
+  comment-pr:
+    description: "Post or update a formatted security summary comment on pull requests (true/false)"
+    required: false
+    default: "true"
+  api-base:
+    description: "ShipBastion VibeShield API base URL"
+    required: false
+    default: "https://shipbastion.com"
+  github-token:
+    description: "GitHub token used to post/update PR comments"
+    required: false
+    default: "${{ github.token }}"
+
+outputs:
+  score:
+    description: "VibeShield security score (0-100)"
+    value: ${{ steps.scan.outputs.score }}
+  grade:
+    description: "VibeShield letter grade (A+ to F)"
+    value: ${{ steps.scan.outputs.grade }}
+  critical-count:
+    description: "Number of critical exposures detected"
+    value: ${{ steps.scan.outputs.critical-count }}
+  high-count:
+    description: "Number of high-severity findings detected"
+    value: ${{ steps.scan.outputs.high-count }}
+  report-url:
+    description: "Live shareable VibeShield report URL"
+    value: ${{ steps.scan.outputs.report-url }}
+  trust-url:
+    description: "Public ShipBastion Verified Trust Page URL"
+    value: ${{ steps.scan.outputs.trust-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run VibeShield Pre-Launch Security Gate
+      id: scan
+      shell: bash
+      env:
+        INPUT_URL: ${{ inputs.url }}
+        INPUT_FAIL_BELOW: ${{ inputs.fail-below }}
+        INPUT_COMMENT_PR: ${{ inputs.comment-pr }}
+        INPUT_API_BASE: ${{ inputs.api-base }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: node "${{ github.action_path }}/src/index.mjs"
